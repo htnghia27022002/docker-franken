@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: nginx
+  #   ports:
+  #     - "${NGINX_PORT:-80}:80"
+  #   volumes:
+  #     - ./www:/var/www/html
+  #     - ../backend-playground:/var/www/backend-playground
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #   depends_on:
+  #     - php
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
+
+  # php:
+  #   build:
+  #     context: ./php
+  #     dockerfile: Dockerfile
+  #   container_name: php
+  #   volumes:
+  #     - ./www:/var/www/html
+  #     - ../backend-playground:/var/www/backend-playground
+  #     - ./php/php.ini:/usr/local/etc/php/php.ini
+  #     - ./php/www.conf:/usr/local/etc/php-fpm.d/www.conf
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
+
+  frankenphp:
+    build:
+      context: .
+      dockerfile: ./frankenphp/Dockerfile
+    container_name: frankenphp
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5173:5173"
+      - "5174:5174"
+      - "5175:5175"
+      - "5176:5176"
+    volumes:
+      - ../Sources/:/app:rw
+      - ./frankenphp/Caddyfile:/etc/frankenphp/Caddyfile
+      - ./frankenphp/Caddyfile.d:/etc/frankenphp/Caddyfile.d
+      - ./data/frankenphp/data:/data
+      - ./data/frankenphp/config:/config
+    environment:
+      SERVER_NAME: ":80"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0}
+    container_name: mysql
+    # Fix lỗi 2058: Ép MySQL 8 sử dụng plugin xác thực cũ ngay khi khởi động
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Fix lỗi Ignored config: Thêm :ro giúp MySQL chấp nhận file cấu hình từ Windows/Host
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  frankenphp_caddy_data:
+    driver: local
+  frankenphp_caddy_config:
+    driver: local

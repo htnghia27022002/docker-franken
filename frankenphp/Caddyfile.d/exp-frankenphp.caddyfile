@@ -1,0 +1,26 @@
+# Config cho localhost
+exp-frankenphp.local {
+    root * /app/exp-frankenphp/public
+    
+    php_server
+    file_server
+    
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+    
+    encode gzip zstd
+    
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+    
+    # Laravel/Symfony routing
+    try_files {path} {path}/ /index.php?{query}
+}

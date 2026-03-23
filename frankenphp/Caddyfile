@@ -1,0 +1,15 @@
+{
+    frankenphp
+    order php_server before file_server
+}
+
+:80 {
+    root * /app/www
+    php_server
+    file_server
+
+    try_files {path} {path}/ /index.php?{query}
+}
+
+# Import sites nếu có
+import /etc/frankenphp/Caddyfile.d/*.caddyfile
